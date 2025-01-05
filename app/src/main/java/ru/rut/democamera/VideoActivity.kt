@@ -64,7 +64,7 @@ class VideoActivity : AppCompatActivity() {
         // Запрашиваем необходимые разрешения
         requestPermissions()
 
-        binding.recordBtn.setOnClickListener {
+        binding.recordVideoBtn.setOnClickListener {
             if (recording == null) {
                 startRecording()
             } else {
@@ -85,7 +85,7 @@ class VideoActivity : AppCompatActivity() {
             startActivity(Intent(this, GalleryActivity::class.java))
         }
 
-        binding.photoBtn.setOnClickListener {
+        binding.switchModeBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
     }
@@ -149,7 +149,6 @@ class VideoActivity : AppCompatActivity() {
                 when (recordEvent) {
                     is VideoRecordEvent.Start -> {
                         Toast.makeText(this, "Recording started", Toast.LENGTH_SHORT).show()
-                        binding.recordBtn.text = "Stop"
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (recordEvent.hasError()) {
@@ -157,7 +156,6 @@ class VideoActivity : AppCompatActivity() {
                         } else {
                             Toast.makeText(this, "Video saved: ${file.absolutePath}", Toast.LENGTH_SHORT).show()
                         }
-                        binding.recordBtn.text = "Record"
                         recording = null
                     }
                 }

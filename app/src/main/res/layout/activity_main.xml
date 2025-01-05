@@ -9,11 +9,11 @@
         android:id="@+id/preview"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        android:keepScreenOn="true"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:keepScreenOn="true"/>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <LinearLayout
         android:id="@+id/bottom_panel"
@@ -24,35 +24,44 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:padding="4dp"
-        android:background="@android:color/black"
-        >
+        android:padding="16dp"
+        android:background="@android:color/darker_gray">
 
-        <Button
-            android:id="@+id/switch_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/switch_cam"
-            android:layout_marginEnd="8dp"/>
+    <ImageButton
+            android:id="@+id/switch_cam_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/baseline_cameraswitch_24"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/switch_cam"
+            android:layout_marginEnd="24dp"/>
 
-        <Button
-            android:id="@+id/img_capture_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/photo"
-            android:layout_marginEnd="8dp"/>
+        <ImageButton
+            android:id="@+id/switch_mode_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/baseline_switch_video_24"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video"
+            android:layout_marginEnd="24dp"/>
 
-        <Button
-            android:id="@+id/video_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/video"
-            android:layout_marginEnd="8dp"/>
-
-        <Button
+        <ImageButton
             android:id="@+id/gallery_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/gallery" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/gallery"
+            android:src="@drawable/baseline_image_24" />
     </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/capture_photo_btn"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp"
+        app:backgroundTint="@color/purple_500"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

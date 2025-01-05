@@ -75,14 +75,14 @@ class MainActivity : AppCompatActivity() {
 
         cameraPermissionResult.launch(android.Manifest.permission.CAMERA)
 
-        binding.imgCaptureBtn.setOnClickListener {
+        binding.capturePhotoBtn.setOnClickListener {
             takePhoto()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 animateFlash()
             }
         }
 
-        binding.switchBtn.setOnClickListener {
+        binding.switchCamBtn.setOnClickListener {
             cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
                 CameraSelector.DEFAULT_FRONT_CAMERA
             } else {
@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        binding.videoBtn.setOnClickListener {
+        binding.switchModeBtn.setOnClickListener {
             val intent = Intent(this, VideoActivity::class.java)
             startActivity(intent)
         }
