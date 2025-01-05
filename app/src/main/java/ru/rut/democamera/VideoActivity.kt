@@ -26,16 +26,15 @@ class VideoActivity : AppCompatActivity() {
     private var recording: Recording? = null
     private lateinit var videoCapture: VideoCapture<Recorder>
     private lateinit var cameraExecutor: ExecutorService
+    private var isTorchOn: Boolean = false
 
     private val TAG = "VideoActivity"
 
-    // Разрешения, которые мы будем запрашивать
     private val REQUIRED_PERMISSIONS = arrayOf(
         Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO
     )
 
-    // Ланчер для запроса разрешений
     private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val cameraPermission = permissions[Manifest.permission.CAMERA] ?: false
@@ -61,7 +60,7 @@ class VideoActivity : AppCompatActivity() {
         cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // Запрашиваем необходимые разрешения
+        // Request necessary permissions
         requestPermissions()
 
         binding.recordVideoBtn.setOnClickListener {
@@ -78,6 +77,9 @@ class VideoActivity : AppCompatActivity() {
             } else {
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
+            if (isTorchOn) {
+                toggleTorch(false)
+            }
             startCamera()
         }
 
@@ -88,20 +90,21 @@ class VideoActivity : AppCompatActivity() {
         binding.switchModeBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
+
+        binding.flashBtn.setOnClickListener {
+            toggleTorch(!isTorchOn)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     private fun requestPermissions() {
-        // Проверяем, предоставлены ли все разрешения
         val missingPermissions = REQUIRED_PERMISSIONS.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (missingPermissions.isNotEmpty()) {
-            // Запрашиваем отсутствующие разрешения
             requestPermissionsLauncher.launch(missingPermissions.toTypedArray())
         } else {
-            // Если все разрешения уже предоставлены, запускаем камеру
             startCamera()
         }
     }
@@ -123,6 +126,7 @@ class VideoActivity : AppCompatActivity() {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+                updateFlashButtonState()
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -141,7 +145,7 @@ class VideoActivity : AppCompatActivity() {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                     withAudioEnabled()
                 } else {
-                    // Разрешение на запись аудио не предоставлено
+                    // Audio permission not granted
                     Toast.makeText(this@VideoActivity, "Audio permission not granted. Recording without sound.", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -170,5 +174,47 @@ class VideoActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+    }
+
+
+    private fun toggleTorch(turnOn: Boolean) {
+        try {
+            val camera = cameraProvider.bindToLifecycle(this, cameraSelector, videoCapture)
+            val hasFlash = camera.cameraInfo.hasFlashUnit()
+            if (!hasFlash) {
+                Toast.makeText(this, "Flash not available on this camera", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            camera.cameraControl.enableTorch(turnOn)
+            isTorchOn = turnOn
+            updateFlashButtonState()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error toggling torch", e)
+            Toast.makeText(this, "Unable to toggle torch", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateFlashButtonState() {
+        if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+            val camera = cameraProvider.bindToLifecycle(this, cameraSelector, videoCapture)
+            val hasFlash = camera.cameraInfo.hasFlashUnit()
+
+            binding.flashBtn.isEnabled = hasFlash
+            if (!hasFlash) {
+                binding.flashBtn.setImageResource(R.drawable.baseline_flash_off_24)
+                isTorchOn = false
+            } else {
+                binding.flashBtn.setImageResource(
+                    if (isTorchOn) R.drawable.baseline_flash_on_24 else R.drawable.baseline_flash_off_24
+                )
+            }
+        } else {
+            binding.flashBtn.isEnabled = false
+            binding.flashBtn.setImageResource(R.drawable.baseline_flash_off_24)
+            if (isTorchOn) {
+                toggleTorch(false)
+            }
+        }
     }
 }

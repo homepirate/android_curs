@@ -30,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraSelector: CameraSelector
     private var imageCapture: ImageCapture? = null
     private lateinit var imageCaptureExecutor: ExecutorService
+    private var isFlashOn: Boolean = false
+
     @RequiresApi(Build.VERSION_CODES.M)
     private val cameraPermissionResult =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { permissionGranted ->
@@ -41,7 +43,6 @@ class MainActivity : AppCompatActivity() {
                     "The camera permission is necessary",
                     Snackbar.LENGTH_INDEFINITE
                 ).show()
-
             }
         }
 
@@ -49,16 +50,20 @@ class MainActivity : AppCompatActivity() {
         val preview = Preview.Builder().build().also {
             it.setSurfaceProvider(binding.preview.surfaceProvider)
         }
+
+        imageCapture = ImageCapture.Builder()
+            .setFlashMode(if (isFlashOn) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF)
+            .build()
+
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
-
-            imageCapture = ImageCapture.Builder().build()
 
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                updateFlashButtonState()
             } catch (e: Exception) {
-                Log.d("TAG", "Use case binding failed")
+                Log.e("MainActivity", "Use case binding failed", e)
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -88,8 +93,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
+            // При переключении камеры сбрасываем состояние вспышки
+            isFlashOn = false
             startCamera()
         }
+
         binding.galleryBtn.setOnClickListener {
             val intent = Intent(this, GalleryActivity::class.java)
             startActivity(intent)
@@ -100,6 +108,9 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        binding.flashBtn.setOnClickListener {
+            toggleFlash()
+        }
     }
 
     override fun onDestroy() {
@@ -117,18 +128,26 @@ class MainActivity : AppCompatActivity() {
                 imageCaptureExecutor,
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        Log.i("TAG", "The image has been saved in ${file.toUri()}")
+                        Log.i("MainActivity", "The image has been saved in ${file.toUri()}")
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Фото сохранено: ${file.absolutePath}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
 
                     override fun onError(exception: ImageCaptureException) {
-                        Toast.makeText(
-                            binding.root.context,
-                            "Error taking photo",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        Log.d("TAG", "Error taking photo:$exception")
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Ошибка при съемке фото: ${exception.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        Log.e("MainActivity", "Error taking photo", exception)
                     }
-
                 })
         }
     }
@@ -141,5 +160,31 @@ class MainActivity : AppCompatActivity() {
                 binding.root.foreground = null
             }, 50)
         }, 100)
+    }
+
+    private fun toggleFlash() {
+        val isUsingBackCamera = cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA
+        if (!isUsingBackCamera) {
+            return
+        }
+
+        isFlashOn = !isFlashOn
+        imageCapture?.flashMode = if (isFlashOn) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF
+        startCamera()
+    }
+
+    private fun updateFlashButtonState() {
+        if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+            binding.flashBtn.isEnabled = true
+            binding.flashBtn.setImageResource(if (isFlashOn) R.drawable.baseline_flash_on_24 else R.drawable.baseline_flash_off_24)
+        } else {
+            binding.flashBtn.isEnabled = false
+            binding.flashBtn.setImageResource(R.drawable.baseline_flash_off_24)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startCamera()
     }
 }
